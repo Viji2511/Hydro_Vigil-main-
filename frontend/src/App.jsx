@@ -22,7 +22,8 @@ import FaultTolerancePanel from "./components/FaultTolerancePanel";
 import ModelPerformancePanel from "./components/ModelPerformancePanel";
 import { runMlPrediction } from "./api/mlApi";
 const MAX_POINTS = 44;
-const TICK_MS = 900;
+const POLL_MS = 900;
+const INCIDENT_COOLDOWN_MS = 30000;
 const STORAGE_KEY = "hydrovigil_countermeasure_memory_v1";
 const SENSOR_IDS = ["P-11", "P-17", "P-23", "W-05", "GW-A2"];
 
@@ -196,39 +197,6 @@ function formatIncidentTimestamp(date = new Date()) {
   }).format(date);
 }
 
-function generateTelemetryPoint(step, phase) {
-  const now = new Date();
-  const drift = (step % 24) / 24;
-  let pressure = 72 + Math.sin(step / 3.7) * 1.8 + (Math.random() - 0.5) * 0.9;
-  let flow = 40 + Math.sin(step / 5.4) * 1.3 + (Math.random() - 0.5) * 0.65;
-  let level = 68 + Math.sin(step / 8) * 0.9 + (Math.random() - 0.5) * 0.42;
-  let anomalyLevel = 0.1 + Math.random() * 0.12;
-
-  if (phase === "phase1") {
-    pressure += Math.sin(step * 1.7) * 2.5;
-    flow += 1.8 + drift * 3;
-    anomalyLevel = 0.45 + Math.random() * 0.1;
-  } else if (phase === "phase2") {
-    pressure += 7.5 + Math.sin(step * 2.2) * 6.4 + (Math.random() > 0.74 ? 4.8 : 0);
-    flow += 7.2 + Math.sin(step / 1.8) * 3.9;
-    level += Math.sin(step * 1.9) * 5.6;
-    anomalyLevel = 0.8 + Math.random() * 0.15;
-  } else if (phase === "phase3") {
-    pressure += 3.4 + Math.sin(step * 1.6) * 3.2;
-    flow += 3.1 + Math.sin(step / 2.5) * 2.3;
-    level += Math.sin(step * 1.4) * 2.8;
-    anomalyLevel = 0.63 + Math.random() * 0.13;
-  }
-
-  return {
-    time: formatClock(now),
-    pressure: clamp(pressure, 52, 96),
-    flow: clamp(flow, 28, 64),
-    level: clamp(level, 50, 84),
-    anomalyLevel: clamp(anomalyLevel, 0, 1),
-  };
-}
-
 function loadCountermeasureMemory() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -384,8 +352,6 @@ export default function App() {
   const [aiBriefing, setAiBriefing] = useState(AI_BRIEFING.normal);
   const [incidents, setIncidents] = useState(createSeedIncidents);
   const [countermeasureMemory, setCountermeasureMemory] = useState(() => loadCountermeasureMemory());
-  const phaseRef = useRef("normal");
-  const tickRef = useRef(0);
   const timeoutsRef = useRef([]);
   // ML backend outputs (REAL inference)
   const [mlDecision, setMlDecision] = useState(null);     // "NORMAL" | "SUSPICIOUS" | "ATTACK"
@@ -393,12 +359,9 @@ export default function App() {
   const [mlConfidence, setMlConfidence] = useState(null); // "LOW" | "MEDIUM" | "HIGH"
   const toastTimerRef = useRef(null);
   const memoryRef = useRef(countermeasureMemory);
-  const [telemetry, setTelemetry] = useState(() => {
-    const points = [];
-    for (let i = 0; i < 34; i += 1) points.push(generateTelemetryPoint(i, "normal"));
-    tickRef.current = points.length;
-    return points;
-  });
+  const lastLoggedDecisionRef = useRef(null);
+  const lastLoggedAtRef = useRef(0);
+  const [telemetry, setTelemetry] = useState([]);
 
   const addIncident = useCallback((entry) => {
     setIncidents((prev) => [
@@ -409,6 +372,30 @@ export default function App() {
       },
       ...prev,
     ].slice(0, 36));
+  }, []);
+
+  const upsertBackendIncident = useCallback((eventId, entry) => {
+    setIncidents((prev) => {
+      const index = prev.findIndex((item) => item.backendEventId === eventId);
+      if (index >= 0) {
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          ...entry,
+          timestamp: formatIncidentTimestamp(),
+        };
+        return updated;
+      }
+      return [
+        {
+          id: `inc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          backendEventId: eventId,
+          timestamp: formatIncidentTimestamp(),
+          ...entry,
+        },
+        ...prev,
+      ].slice(0, 36);
+    });
   }, []);
 
   const showToast = useCallback((payload) => {
@@ -561,25 +548,10 @@ export default function App() {
   }, [countermeasureMemory]);
 
   useEffect(() => {
-    phaseRef.current = simulationPhase;
-  }, [simulationPhase]);
-
-  useEffect(() => {
     const clock = setInterval(() => setTimestamp(new Date()), 1000);
     return () => clearInterval(clock);
   }, []);
 
-  useEffect(() => {
-    const telemetryTimer = setInterval(() => {
-      setTelemetry((prev) => {
-        const point = generateTelemetryPoint(tickRef.current, phaseRef.current);
-        tickRef.current += 1;
-        return [...prev, point].slice(-MAX_POINTS);
-      });
-    }, TICK_MS);
-
-    return () => clearInterval(telemetryTimer);
-  }, []);
 
   useEffect(() => {
     if (!mlDecision) return;
@@ -594,69 +566,89 @@ export default function App() {
   }, [mlDecision]);
 
   useEffect(() => {
-    if (telemetry.length < 20) return;
-
     let cancelled = false;
+    let inFlight = false;
 
-    const runML = async () => {
+    const pullPrediction = async () => {
+      if (inFlight) return;
+      inFlight = true;
       try {
-        const windowData = telemetry.slice(-20).map((t) => [t.pressure, t.flow, t.level]);
-        const data = await runMlPrediction(windowData);
-
+        const data = await runMlPrediction();
         if (cancelled) return;
 
         setMlDecision(data.final_decision);
         setMlRiskScore(data.risk_score);
-        setMlConfidence(data.confidence);
+        setMlConfidence(data.confidence_score ?? null);
+
+        if (data.telemetry_point) {
+          const nextPoint = {
+            time: formatClock(new Date()),
+            pressure: Number(data.telemetry_point.pressure ?? 0),
+            flow: Number(data.telemetry_point.flow ?? 0),
+            level: Number(data.telemetry_point.level ?? 0),
+            anomalyLevel: clamp(Number(data.telemetry_point.anomalyLevel ?? 0), 0, 1),
+          };
+          setTelemetry((prev) => [...prev, nextPoint].slice(-MAX_POINTS));
+        }
+
+        const decision = data.final_decision ?? null;
+        const risk = Number(data.risk_score ?? 0);
+        const now = Date.now();
+        const previousDecision = lastLoggedDecisionRef.current;
+
+        if (decision && previousDecision === null) {
+          lastLoggedDecisionRef.current = decision;
+          lastLoggedAtRef.current = now;
+        } else if (decision) {
+          const changed = decision !== previousDecision;
+          const repeatAlert =
+            decision !== "NORMAL" && now - lastLoggedAtRef.current >= INCIDENT_COOLDOWN_MS;
+          const recovered = decision === "NORMAL" && previousDecision && previousDecision !== "NORMAL";
+          const shouldLog = decision === "NORMAL" ? recovered : changed || repeatAlert;
+
+          if (shouldLog) {
+            const backendEvent = data.event ?? null;
+            if (backendEvent?.event_id) {
+              upsertBackendIncident(backendEvent.event_id, {
+                sensorId: backendEvent.sensor_id ?? targetNodeId,
+                event: backendEvent.event,
+                predictionType: backendEvent.prediction_type ?? "Threat",
+                severity: backendEvent.severity ?? "low",
+                countermeasure: backendEvent.countermeasure ?? "No corrective action required.",
+                memoryAction: backendEvent.memory_action ?? "N/A",
+                status: backendEvent.status ?? "Investigating",
+                mitigationSeconds: decision === "NORMAL" ? 18 : 42,
+              });
+            }
+
+            if (changed && decision === "ATTACK") {
+              showToast({
+                type: "critical",
+                message: `Backend model detected ATTACK on node ${targetNodeId} (${risk}%).`,
+              });
+            }
+
+            lastLoggedDecisionRef.current = decision;
+            lastLoggedAtRef.current = now;
+          }
+        }
       } catch (err) {
         if (!cancelled) console.error("ML inference failed:", err);
+      } finally {
+        inFlight = false;
       }
     };
 
-    runML();
+    pullPrediction();
+    const poller = setInterval(pullPrediction, POLL_MS);
 
     return () => {
       cancelled = true;
+      clearInterval(poller);
     };
-  }, [telemetry]);
+  }, [showToast, targetNodeId, upsertBackendIncident]);
 
   
-  useEffect(() => {
-    const falsePredictionTimer = setInterval(() => {
-      const roll = Math.random();
-
-      if (roll < 0.36) {
-        const sensorId = randomItem(SENSOR_IDS);
-        const pattern = randomItem(FALSE_POSITIVE_PATTERNS);
-        const memoryOutcome = applyCountermeasureMemory(pattern);
-        addIncident({
-          sensorId,
-          event: `False prediction on ${pattern.label.toLowerCase()} channel.`,
-          predictionType: "False Positive",
-          severity: "medium",
-          countermeasure: memoryOutcome.countermeasure,
-          memoryAction: memoryOutcome.memoryAction,
-          status: "Resolved",
-          mitigationSeconds: 32 + Math.round(Math.random() * 21),
-        });
-      } else if (roll < 0.52) {
-        addIncident({
-          sensorId: randomItem(SENSOR_IDS),
-          event: "Primary confidence dip detected. LSTM fallback engaged for redundancy.",
-          predictionType: "Threat",
-          severity: "low",
-          countermeasure: "Fallback channel activated and synchronized with transformer output.",
-          memoryAction: "N/A",
-          status: "Mitigated",
-          mitigationSeconds: 18 + Math.round(Math.random() * 14),
-          fallbackActivated: true,
-        });
-      }
-    }, 16000);
-
-    return () => clearInterval(falsePredictionTimer);
-  }, [addIncident, applyCountermeasureMemory]);
-
   useEffect(() => {
     return () => {
       clearSimulationTimers();
@@ -667,16 +659,7 @@ export default function App() {
   const latestTelemetry = telemetry[telemetry.length - 1] ?? { pressure: 0, flow: 0, level: 0, anomalyLevel: 0 };
   const previousTelemetry = telemetry[telemetry.length - 2] ?? latestTelemetry;
 
- const threatConfidence =
-  mlRiskScore !== null
-    ? mlRiskScore
-    : simulationPhase === "phase3"
-    ? 94
-    : simulationPhase === "phase2"
-    ? 88
-    : simulationPhase === "phase1"
-    ? 57
-    : 18;
+ const threatConfidence = mlRiskScore ?? 0;
 
   const learnedCountermeasures = useMemo(
     () =>
@@ -919,6 +902,13 @@ export default function App() {
                     {simulationRunning ? " | simulation in progress" : " | monitoring idle"}
                   </p>
                 </div>
+                <p className="mt-3 text-xs uppercase tracking-[0.12em] text-textSecondary">
+                  Decision: <span className="font-semibold text-textPrimary">{mlDecision ?? "N/A"}</span>
+                  {" | "}
+                  Risk: <span className="font-semibold text-textPrimary">{mlRiskScore ?? 0}%</span>
+                  {" | "}
+                  Confidence: <span className="font-semibold text-textPrimary">{mlConfidence ?? "N/A"}</span>
+                </p>
               </motion.section>
 
               <AnimatePresence mode="wait">
@@ -962,7 +952,10 @@ export default function App() {
                       <ModelPerformancePanel reports={MODEL_REPORTS} />
                       <FaultTolerancePanel metrics={faultMetrics} learnedCountermeasures={learnedCountermeasures} />
                     </section>
-                    <IncidentLog incidents={validationLog.length > 0 ? validationLog : incidents.slice(0, 8)} />
+                    <IncidentLog
+                      incidents={validationLog.length > 0 ? validationLog : incidents.slice(0, 8)}
+                      showFlags={false}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>

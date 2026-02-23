@@ -1,11 +1,9 @@
 const DEFAULT_API_BASE = "http://127.0.0.1:8000";
 const ML_API_BASE = import.meta.env.VITE_ML_API_URL ?? DEFAULT_API_BASE;
 
-export async function runMlPrediction(sensorWindow) {
+export async function runMlPrediction() {
   const response = await fetch(`${ML_API_BASE}/predict`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sensor_data: sensorWindow }),
+    method: "GET",
   });
 
   if (!response.ok) {

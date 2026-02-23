@@ -8,9 +8,11 @@ const SEVERITY_STYLES = {
 const PREDICTION_STYLES = {
   Threat: "bg-critical/15 text-critical ring-critical/40",
   "False Positive": "bg-warning/15 text-warning ring-warning/40",
+  Normal: "bg-accent/15 text-accent ring-accent/40",
+  Recovery: "bg-accent/15 text-accent ring-accent/40",
 };
 
-export default function IncidentLog({ incidents }) {
+export default function IncidentLog({ incidents, showFlags = true }) {
   return (
     <section className="glass-panel rounded-xl p-4 shadow-panel sm:p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -25,8 +27,8 @@ export default function IncidentLog({ incidents }) {
               <th className="border-b border-white/10 px-3 py-2">Timestamp</th>
               <th className="border-b border-white/10 px-3 py-2">Sensor ID</th>
               <th className="border-b border-white/10 px-3 py-2">Event</th>
-              <th className="border-b border-white/10 px-3 py-2">Prediction</th>
-              <th className="border-b border-white/10 px-3 py-2">Severity</th>
+              {showFlags ? <th className="border-b border-white/10 px-3 py-2">Prediction</th> : null}
+              {showFlags ? <th className="border-b border-white/10 px-3 py-2">Severity</th> : null}
               <th className="border-b border-white/10 px-3 py-2">Counter-Action</th>
               <th className="border-b border-white/10 px-3 py-2">Status</th>
             </tr>
@@ -43,24 +45,28 @@ export default function IncidentLog({ incidents }) {
                 <td className="px-3 py-3 font-mono text-xs text-textSecondary">{incident.timestamp}</td>
                 <td className="px-3 py-3 font-mono text-xs text-textPrimary">{incident.sensorId ?? "N/A"}</td>
                 <td className="px-3 py-3">{incident.event}</td>
-                <td className="px-3 py-3">
-                  <span
-                    className={`inline-flex rounded-lg px-2 py-1 text-xs font-semibold uppercase ring-1 ${
-                      PREDICTION_STYLES[incident.predictionType ?? "Threat"]
-                    }`}
-                  >
-                    {incident.predictionType ?? "Threat"}
-                  </span>
-                </td>
-                <td className="px-3 py-3">
-                  <span
-                    className={`inline-flex rounded-lg px-2 py-1 text-xs font-semibold uppercase ring-1 ${
-                      SEVERITY_STYLES[incident.severity]
-                    }`}
-                  >
-                    {incident.severity}
-                  </span>
-                </td>
+                {showFlags ? (
+                  <td className="px-3 py-3">
+                    <span
+                      className={`inline-flex rounded-lg px-2 py-1 text-xs font-semibold uppercase ring-1 ${
+                        PREDICTION_STYLES[incident.predictionType ?? "Threat"]
+                      }`}
+                    >
+                      {incident.predictionType ?? "Threat"}
+                    </span>
+                  </td>
+                ) : null}
+                {showFlags ? (
+                  <td className="px-3 py-3">
+                    <span
+                      className={`inline-flex rounded-lg px-2 py-1 text-xs font-semibold uppercase ring-1 ${
+                        SEVERITY_STYLES[incident.severity]
+                      }`}
+                    >
+                      {incident.severity}
+                    </span>
+                  </td>
+                ) : null}
                 <td className="px-3 py-3 text-xs text-textSecondary">
                   <p className="text-sm text-textPrimary">{incident.countermeasure ?? "--"}</p>
                   {incident.memoryAction && incident.memoryAction !== "N/A" ? (
