@@ -297,12 +297,8 @@ HydroVigil is designed for real-world deployment across three tiers:
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
 
 <p align="center">
   Made with 💧 by Team SHE CORE · SSN College of Engineering
 </p>
+
