@@ -14,6 +14,10 @@ export default function AIExplanation({
   recommendations,
   threatLevel,
   expanded,
+  zScores,
+  affectedSensor,
+  detectionReason,
+  fallbackActivated,
 }) {
   const threatClass = THREAT_STYLE[threatLevel] ?? THREAT_STYLE.Low;
 
@@ -21,12 +25,23 @@ export default function AIExplanation({
     <section className="glass-panel rounded-xl p-4 shadow-panel sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-textPrimary">AI Threat Briefing</h2>
-        <p className="text-xs uppercase tracking-[0.14em] text-textSecondary">Inference Core v4.8</p>
+        <div className="flex items-center gap-2">
+          {fallbackActivated ? (
+            <span className="animate-pulse rounded-md bg-warning/20 border border-warning/40 px-2 py-0.5 text-[9px] font-bold uppercase text-warning">
+              LSTM Fallback Active
+            </span>
+          ) : (
+            <span className="rounded-md bg-accent/20 border border-accent/40 px-2 py-0.5 text-[9px] font-bold uppercase text-accent">
+              Transformer Active
+            </span>
+          )}
+          <p className="text-xs uppercase tracking-[0.14em] text-textSecondary">Inference Core v4.8</p>
+        </div>
       </div>
 
       <motion.div
         className="rounded-xl border border-white/10 bg-card/72 p-4"
-        animate={{ boxShadow: expanded ? "0 0 0 1px rgba(220,38,38,0.22)" : "0 0 0 1px rgba(0,0,0,0)" }}
+        animate={{ boxShadow: expanded || threatLevel === "High" ? "0 0 0 1px rgba(220,38,38,0.22)" : "0 0 0 1px rgba(0,0,0,0)" }}
         transition={{ duration: 0.34, ease: "easeOut" }}
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -35,8 +50,13 @@ export default function AIExplanation({
             Threat Level: {threatLevel}
           </span>
         </div>
-        <p className="mt-2 text-sm leading-6 text-textSecondary">{summary}</p>
+        
+        {/* Natural Language Reasoning Reason */}
+        <p className="mt-2 text-sm leading-6 text-textSecondary">
+          {detectionReason ?? summary}
+        </p>
 
+        {/* Real-time confidence bar */}
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.12em]">
             <span className="text-textSecondary">Confidence</span>
@@ -52,26 +72,44 @@ export default function AIExplanation({
           </div>
         </div>
 
-        <AnimatePresence>
-          {expanded ? (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              transition={{ duration: 0.34, ease: "easeOut" }}
-              className="mt-4 rounded-xl border border-critical/35 bg-critical/10 px-3 py-2 text-sm text-textPrimary"
-            >
-              Detected coordinated manipulation of flow-pressure correlation. Probability of malicious intrusion: 94%.
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+        {/* Explainability Z-Scores Metrics Segment */}
+        {zScores ? (
+          <div className="mt-4 border-t border-white/10 pt-3">
+            <p className="text-[10px] uppercase tracking-[0.12em] text-textSecondary mb-2 font-mono">Real-time Attribution Z-Scores</p>
+            <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+              <div className="rounded border border-white/5 bg-white/[0.02] p-1.5">
+                <span className="block text-[9px] text-textSecondary uppercase">Reconstruction</span>
+                <span className={`font-bold ${Math.abs(zScores.reconstruction) > 2.0 ? "text-critical" : "text-textPrimary"}`}>
+                  {zScores.reconstruction > 0 ? "+" : ""}{zScores.reconstruction.toFixed(2)}
+                </span>
+              </div>
+              <div className="rounded border border-white/5 bg-white/[0.02] p-1.5">
+                <span className="block text-[9px] text-textSecondary uppercase">Temporal (A)</span>
+                <span className={`font-bold ${Math.abs(zScores.attention) > 2.0 ? "text-critical" : "text-textPrimary"}`}>
+                  {zScores.attention > 0 ? "+" : ""}{zScores.attention.toFixed(2)}
+                </span>
+              </div>
+              <div className="rounded border border-white/5 bg-white/[0.02] p-1.5">
+                <span className="block text-[9px] text-textSecondary uppercase">Entropy (E)</span>
+                <span className={`font-bold ${Math.abs(zScores.entropy) > 2.0 ? "text-critical" : "text-textPrimary"}`}>
+                  {zScores.entropy > 0 ? "+" : ""}{zScores.entropy.toFixed(2)}
+                </span>
+              </div>
+            </div>
+            {affectedSensor && affectedSensor !== "Unknown" ? (
+              <p className="mt-2 text-[10px] text-textSecondary">
+                Most affected anomaly channel: <span className="font-mono font-bold text-accent">{affectedSensor}</span>
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div>
             <p className="text-xs uppercase tracking-[0.12em] text-textSecondary">Indicators</p>
             <ul className="mt-2 space-y-2 text-sm text-textPrimary">
               {signals.map((signal) => (
-                <li key={signal} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                <li key={signal} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
                   {signal}
                 </li>
               ))}
@@ -81,7 +119,7 @@ export default function AIExplanation({
             <p className="text-xs uppercase tracking-[0.12em] text-textSecondary">Recommended Actions</p>
             <ul className="mt-2 space-y-2 text-sm text-textPrimary">
               {recommendations.map((recommendation) => (
-                <li key={recommendation} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                <li key={recommendation} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
                   {recommendation}
                 </li>
               ))}

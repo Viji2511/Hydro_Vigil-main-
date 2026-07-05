@@ -1,8 +1,9 @@
+import asyncio
 from pathlib import Path
 from threading import Lock
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from data_stream import REQUIRED_FEATURES, SwatCsvStream, ordered_values
@@ -92,7 +93,7 @@ def home():
 
 
 @app.get("/predict")
-def run_prediction(window_size: int = Query(default=20, ge=2, le=200)):
+def run_prediction(window_size: int = Query(default=100, ge=2, le=200)):
     """
     Reads the next sequential window from backend data source and runs inference.
     No telemetry is accepted from frontend.
@@ -127,3 +128,50 @@ def run_prediction(window_size: int = Query(default=20, ge=2, le=200)):
     }
     result["event"] = event_payload
     return result
+
+
+@app.websocket("/ws/telemetry")
+async def websocket_telemetry(websocket: WebSocket):
+    """
+    Streams predictions in real-time to connected clients, updating every 900ms.
+    """
+    await websocket.accept()
+    try:
+        while True:
+            try:
+                # Use window size 100 for PyTorch autoencoders
+                window_size = 100
+                named_rows = SWAT_STREAM.next_window(window_size)
+                ordered_rows = [ordered_values(row) for row in named_rows]
+                sensor_data = np.array(ordered_rows, dtype=float)
+                result = predict(sensor_data)
+                signature = build_fault_signature(sensor_data)
+                fault_memory = handle_fault_memory(signature, result["final_decision"])
+                with EVENT_LOCK:
+                    event_payload = _build_event_payload(result, fault_memory)
+
+                latest_row = named_rows[-1]
+                result["features_used"] = REQUIRED_FEATURES
+                result["window_size"] = window_size
+                result["data_source"] = str(CSV_PATH)
+                result["telemetry_point"] = {
+                    "pressure": latest_row["PIT501"],
+                    "flow": latest_row["FIT101"],
+                    "level": latest_row["LIT101"],
+                    "anomalyLevel": float(result["risk_score"]) / 100.0,
+                }
+                result["fault_memory"] = fault_memory
+                result["fault_signature"] = {
+                    "mean_error": round(float(signature["mean_error"]), 6),
+                    "max_error": round(float(signature["max_error"]), 6),
+                    "affected_sensor": signature["affected_sensor"],
+                }
+                result["event"] = event_payload
+                
+                await websocket.send_json(result)
+            except Exception as e:
+                await websocket.send_json({"error": str(e)})
+            
+            await asyncio.sleep(0.9)
+    except WebSocketDisconnect:
+        pass

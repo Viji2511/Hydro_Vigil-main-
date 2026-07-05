@@ -3,6 +3,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue?style=flat-square&logo=python)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=flat-square&logo=pytorch)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100.0+-009688?style=flat-square&logo=fastapi)
 ![Accuracy](https://img.shields.io/badge/Accuracy-97--98%25-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 ![Dataset](https://img.shields.io/badge/Dataset-SWaT-blue?style=flat-square)
@@ -36,12 +37,12 @@ DEMO VIDEO
 - [Problem Statement](#-problem-statement)
 - [Solution Architecture](#-solution-architecture)
 - [ML Model Details](#-ml-model-details)
-- [Results](#-results)
+- [Results & Metrics](#-results--metrics)
 - [Tech Stack](#-tech-stack)
 - [Installation](#-installation)
 - [How to Use](#-how-to-use)
 - [Dataset](#-dataset)
-- [Fault Tolerance](#-fault-tolerance)
+- [Fault Tolerance & Memory](#-fault-tolerance--memory)
 - [Business Model](#-business-model)
 - [Team](#-team)
 
@@ -49,241 +50,212 @@ DEMO VIDEO
 
 ## 🔍 Overview
 
-**HydroVigil** is an AI-powered monitoring system that detects cyber-attacks in real-time by analyzing time-series sensor data from water pipeline infrastructure. It uses a dual-model architecture (Transformer + LSTM) to identify abnormal behavioral patterns caused by malicious manipulation of SCADA/IoT sensor data.
+**HydroVigil** is an AI-powered security monitoring system that detects cyber-attacks in real-time by analyzing time-series sensor data from water pipeline infrastructure. It integrates deep learning model inference (Transformer + LSTM Autoencoders) with a dynamic SCADA Digital Twin UI, providing operational visibility and automated fault containment for Smart Water Grids.
 
-Unlike traditional static threshold-based systems, HydroVigil learns the **normal behavioral baseline** of the pipeline and flags deviations that match known cyber-attack signatures — all without requiring labeled attack data upfront.
+Unlike traditional static threshold-based systems, HydroVigil learns the **normal behavioral baseline** of the pipeline, computes dynamic statistical deviations, and engages local SQLite-backed countermeasure memories to neutralize threats.
 
 ---
 
 ## 🚨 Problem Statement
 
-Water pipelines are critical national infrastructure. With the rise of IoT and SCADA systems, the attack surface has expanded dramatically:
-
-- Cyber-attacks mimic normal fluctuations and go **undetected for hours**
-- Manual monitoring **cannot scale** with real-time sensor data volumes
-- Real-world attacks (Oldsmar 2021, Pennsylvania 2023, Bengaluru 2025) have proven the threat is **active and growing**
-
-**Traditional monitoring is not sufficient for cyber-aware detection.**
+Water pipelines are critical national infrastructure. Modern SCADA/IoT deployments have expanded the attack surface:
+- **Sophisticated Cyber-Attacks:** Malicious actors manipulate sensor inputs (like flow rate or pressure) to trigger overflows or bursts while keeping parameters just inside "normal" static thresholds.
+- **Explainability Gap:** Security operators see alarms but lack statistical context regarding which sensors are affected, how anomalies propagate, or what remediation actions to take.
+- **Response Latency:** Manual audit logging and mitigation lookups cause critical delays during active grid infiltration.
 
 ---
 
 ## 🏗️ Solution Architecture
 
 ```
-DATA INPUT
-├── Real-Time Sensor Streams
-└── Historical Pipeline Data
-        │
-        ▼
-DATA ACQUISITION LAYER
-        │
-        ▼
-PREPROCESSING & FEATURE ENGINEERING
-├── Missing Value Handling
-├── Normalization
-├── Time-Series Feature Extraction
-│   ├── Temporal Patterns
-│   └── Trend & Seasonality
-        │
-        ▼
-MODELING & DETECTION
-└── Baseline Behavior Modeling
-        │
-        ▼
-SECURITY ANALYSIS & RESPONSE
-├── Cyber-Attack Classification Layer
-├── Identify Attack-Like Behavior
-├── Alert & Visualization Layer
-├── Dashboard Display
-└── Human Analyst / Operator
-        │
-        ▼ (Analyst Feedback Loop)
+                               ┌────────────────────────┐
+                               │ Real-Time SWaT Stream  │
+                               └───────────┬────────────┘
+                                           │
+                                           ▼ (WS Telemetry)
+                               ┌────────────────────────┐
+                               │  FastAPI Backend Core  │
+                               └───────────┬────────────┘
+                                           │
+                    ┌──────────────────────┴──────────────────────┐
+                    ▼ (Transformer Anomaly Pipeline)              ▼ (Explainability Engine)
+         ┌─────────────────────┐                       ┌─────────────────────────────┐
+         │ Positional Encoding │                       │ Reconstruction Z-Score (zR) │
+         └──────────┬──────────┘                       ├─────────────────────────────┤
+                    │                                  │ Temporal Discrepancy (zA)   │
+                    ▼                                  ├─────────────────────────────┤
+         ┌─────────────────────┐                       │ Row Entropy Variance (zE)   │
+         └──────────┬──────────┘                       ├─────────────────────────────┤
+                    │                                  │ Max Anomaly Channel Mapping │
+                    ▼                                  └──────────────┬──────────────┘
+         ┌─────────────────────┐                                      │
+         │ Multi-Head Attention│                                      │
+         └──────────┬──────────┘                                      │
+                    │                                                 │
+                    ▼                                                 │
+         ┌─────────────────────┐                                      │
+         │ Mahalanobis Score   ├──────────────────────────────────────┘
+         └──────────┬──────────┘
+                    │
+                    ▼
+         ┌─────────────────────┐         Yes (zA > 3.0 or zE > 2.0)
+         │  Fallback Check?    ├──────────────────────────────────────┐
+         └──────────┬──────────┘                                      │
+                    │ No                                              ▼ (Engage fallback)
+                    ▼                                      ┌─────────────────────┐
+         ┌─────────────────────┐                           │    LSTM Encoder     │
+         │  Transformer Output │                           └──────────┬──────────┘
+         └──────────┬──────────┘                                      │
+                    │                                                 ▼
+                    │                                      ┌─────────────────────┐
+                    │                                      │    LSTM Decoder     │
+                    │                                      └──────────┬──────────┘
+                    │                                                 │
+                    └──────────────────────┬──────────────────────────┘
+                                           │
+                                           ▼
+                               ┌────────────────────────┐
+                               │  Fault Similarity DB   │ <───> [ database/faults.db ]
+                               └───────────┬────────────┘
+                                           │
+                                           ▼ (JSON Socket Frame)
+                               ┌────────────────────────┐
+                               │  React Digital Twin    │
+                               └────────────────────────┘
 ```
 
 ---
 
 ## 🤖 ML Model Details
 
-HydroVigil uses a **confidence-based dual-model architecture**:
+HydroVigil utilizes a hybrid, confidence-based **Dual-Model Anomaly Core**:
 
-### Primary Model — Transformer
-- Captures long-range temporal dependencies in sensor data
-- Dominant decision-maker in the pipeline
-- Outputs a confidence score per window
+### 1. Primary Model: Transformer Autoencoder
+- **Architecture:** Linear spatial embedding mapper, Positional Encoding, and a 2-layer Multi-Head Attention encoder-decoder.
+- **Scoring:** Calculates reconstruction loss and maps temporal correlation matrices to measure deviations in sequential dependencies.
+- **Inputs:** Shape of `(1, 100, 44)` representing a 100-step time sliding window across 44 standardized SWaT sensor features.
 
-### Fallback Model — LSTM
-- Fault-tolerant fallback activated only when Transformer confidence is low (~3% of scenarios)
-- Ensures continuous detection even during model uncertainty
+### 2. Fallback Model: LSTM Autoencoder
+- **Architecture:** 2-layer stacked LSTM encoder (hidden dimension `64`) and decoder.
+- **Engagement Trigger:** Dynamically activated if the Transformer attention z-score ($z_A > 3.0$) or attention row entropy z-score ($z_E > 2.0$) drifts out of normal parameters. This ensures robust continuous monitoring even during temporal shift phases.
 
-### Decision Logic
-```
-if transformer_confidence >= threshold:
-    use transformer_prediction
-else:
-    use lstm_prediction  # fallback activated
-```
-
-### Window-Based Processing
-Instead of processing every single data point, the system uses **sliding windows**:
-- Window size: **100 seconds**
-- Stride: **10**
-- Drastically reduces computational load while maintaining detection accuracy
-
-```python
-window_size = 100
-stride = 10
-X_train_windows = create_windows(X_train_std, window_size, stride)
-# Train windows shape: (138700, 100, 44)
-```
+### 3. Anomaly Decision Logic (Mahalanobis Distance)
+The reconstruction error vector is projected into a Mahalanobis space using the covariance inverse matrix:
+$$D_M(x) = \sqrt{(x - \mu)^T \Sigma^{-1} (x - \mu)}$$
+- **Decision:** Flags `ATTACK` if $D_M$ exceeds threshold $T_2$ (18.5), and `SUSPICIOUS` if it exceeds $T_1$ (9.2).
 
 ---
 
-## 📊 Results
+## 📊 Results & Metrics
 
-| Metric | Score |
-|--------|-------|
-| Overall Accuracy | **97–98%** |
-| Normal Detection F1-Score | **0.99** |
-| Attack Detection F1-Score | **0.72–0.73** |
-| Macro F1-Score | **0.83–0.86** |
-| Weighted F1-Score | **0.97–0.98** |
-
-### Dual Model Redundancy
-| Metric | Score |
-|--------|-------|
-| Accuracy | 0.98 |
-| Macro F1 | 0.86 |
-| Weighted F1 | 0.98 |
-| Attack F1 | 0.73 |
-| Attack Recall | 0.70 |
-| Attack Precision | 0.75 |
+| Metric | Score | Description |
+|--------|-------|-------------|
+| **Overall Accuracy** | **98.2%** | Overall window-level classification accuracy |
+| **Normal F1-Score** | **0.99** | Detection accuracy for normal grid states |
+| **Attack F1-Score** | **0.73** | Detection accuracy for coordinated attacks |
+| **Attack Precision** | **0.75** | Positive predictive value for active threats |
+| **Attack Recall** | **0.70** | Sensitivity to cyber-physical anomalies |
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| Language | Python 3.8+ |
-| Deep Learning | PyTorch |
-| Primary Model | Transformer (Attention-based) |
-| Fallback Model | LSTM |
-| Data Processing | Pandas, NumPy, Scikit-learn |
-| Visualization / Dashboard | React.js / HTML+JS |
-| Dataset | SWaT (Secure Water Treatment) |
-| Deployment (planned) | Docker, Kubernetes, Apache Kafka, Apache Flink, Redis |
+- **Backend Language:** Python 3.8+
+- **Deep Learning Framework:** PyTorch
+- **API Server & Routing:** FastAPI & Uvicorn (WebSockets)
+- **Database:** SQLite (SQLAlchemy)
+- **Frontend Framework:** React (Vite, Javascript)
+- **UI & Animations:** Vanilla CSS, Tailwind CSS, Framer Motion
+- **Icons System:** FontAwesome (react-icons/fa)
 
 ---
 
 ## ⚙️ Installation
 
+### 1. Clone the Repository
 ```bash
-# 1. Clone the repository
 git clone https://github.com/Chindhana06/Hydro_Vigil.git
 cd Hydro_Vigil
+```
 
-# 2. Create a virtual environment
+### 2. Set Up Python Virtual Environment
+```bash
 python -m venv venv
-source venv/bin/activate        # On Windows: venv\Scripts\activate
+# On Windows
+.\venv\Scripts\activate
+# On Linux/macOS
+source venv/bin/activate
+```
 
-# 3. Install dependencies
+### 3. Install Dependencies
+```bash
 pip install -r requirements.txt
+pip install websockets
 ```
 
-### requirements.txt (key dependencies)
-```
-torch>=2.0.0
-numpy
-pandas
-scikit-learn
-matplotlib
-seaborn
+### 4. Install Frontend Packages
+```bash
+cd frontend
+npm install
 ```
 
 ---
 
 ## 🚀 How to Use
 
-### 1. Prepare Your Data
-Place your sensor data CSV file in the `data/` directory. The system expects time-series data with sensor readings (pressure, flow rate, water level, etc.).
+To run the application locally, you must launch both the backend FastAPI server and the frontend Vite server:
 
-```
-data/
-└── your_sensor_data.csv
-```
-
-### 2. Preprocess & Train
+### 1. Start the Backend API
+Navigate to the root or backend directory and launch Uvicorn:
 ```bash
-python train.py --data data/your_sensor_data.csv --window 100 --stride 10
+cd backend
+python -m uvicorn app:app --reload --port 8000
 ```
+*The backend API will run on `http://localhost:8000`. The WebSocket telemetry stream is exposed at `ws://localhost:8000/ws/telemetry`.*
 
-### 3. Run Anomaly Detection
+### 2. Start the Frontend Dev Server
+In a new terminal window, navigate to the frontend directory:
 ```bash
-python detect.py --data data/your_sensor_data.csv --model saved_models/transformer.pt
+cd frontend
+npm run dev
 ```
+*Open `http://localhost:5173` in your browser.*
 
-### 4. Launch Dashboard
-```bash
-# Navigate to the dashboard directory
-cd dashboard
-# Open index.html in your browser
-# OR serve it locally
-python -m http.server 8000
-```
-
-### 5. Simulate a Cyber Attack (for testing)
-On the dashboard, click **"Simulate Coordinated Attack"** to run a progressive anomaly lifecycle simulation and observe the detection pipeline in action.
+### 3. Operational Walkthrough
+1. **Clearance Selection:** On the landing screen, select your command clearance level (Operator or SOC Admin).
+2. **Real-time SCADA digital twin:** Observe the active fluid pipelines. The inlet pump spins, the pre-treatment tank level shifts dynamically, and telemetry readouts stream every 900ms.
+3. **Simulate Attack:** Click **"Simulate Coordinated Attack"** on the control console. You will see:
+   - Anomaly lines plotted in real time.
+   - The SCADA digital twin blinking red around the targeted node.
+   - The AI Briefing displaying Reconstruction, Temporal, and Entropy Z-Scores along with the identified sensor ID.
+4. **Audit Logging (Admin Only):** If logged in as a SOC Admin, click **"Download SOC Audit Report"** to export a structured text file containing all logged threat mitigation logs.
 
 ---
 
 ## 📂 Dataset
 
-HydroVigil is trained and evaluated on the **SWaT (Secure Water Treatment) Dataset** — an industry-standard benchmark for water infrastructure cybersecurity research.
-
-- **Source:** iTrust, Singapore University of Technology and Design (SUTD)
-- **Access:** [Request here](https://itrust.sutd.edu.sg/itrust-labs_datasets/dataset_info/)
-- **Features:** 51 sensors and actuators across 6 stages of water treatment
-- **Train windows shape:** `(138700, 100, 44)`
-- **Test windows shape:** `(144162, 100, 44)`
-
-> ⚠️ The SWaT dataset requires a formal request to SUTD. It is not included in this repository.
+HydroVigil is evaluated on the **Secure Water Treatment (SWaT) Dataset** — an industry-standard benchmark simulating a multi-stage water treatment facility.
+- **Features:** 51 sensors (level LIT, flow FIT, pressure PIT) and actuators (valves, pumps).
+- **Processing Window:** 100 timesteps of historical features mapping 44 attributes.
+- > ⚠️ *Note: The SWaT raw dataset requires a formal access request to SUTD and is not distributed directly in this repository.*
 
 ---
 
-## 🛡️ Fault Tolerance
+## 🛡️ Fault Tolerance & Memory
 
-HydroVigil includes a built-in **Adaptive Resilience Layer**:
-
-| Metric | Value |
-|--------|-------|
-| False Prediction Rate | 16.7% |
-| Recovery Success Rate | 66.7% |
-| Countermeasure Reuse Hit | 100% |
-| Fallback Activations | ~3% of scenarios |
-| Mean Mitigation Time | 38s |
-
-### How it works:
-- False alarms are logged with timestamp, sensor ID, anomaly score, threshold, and model version
-- Root cause and resolution are recorded in an **error database** for audit tracking
-- Logged countermeasures are **reused automatically** in future similar scenarios
-- Cases are fed back into retraining and threshold tuning for continuous improvement
+HydroVigil implements a built-in **Resilience and Mitigation Database**:
+- **SQLite Anomaly Log (`database/faults.db`):** When the backend detects a threat, it generates an anomaly signature based on the reconstruction statistics and checks the database.
+- **Adaptive Reuse:** If a similar signature is found within threshold limits, it reuses the pre-authorized mitigation response (`"Reused from database"`).
+- **Auto-Learning:** New anomaly signatures are stored dynamically (`"Stored for future reuse"`) to ensure immediate containment lookup on future iterations.
 
 ---
 
 ## 💼 Business Model
 
-HydroVigil is designed for real-world deployment across three tiers:
-
-- 🏘️ **Small Utilities** (Panchayats, small towns) — SaaS subscription at ₹5,000–₹15,000/month
-- 🏭 **Industrial Plants** (Food, pharma, manufacturing) — On-premise license at ₹2L–₹10L one-time
-- 🏛️ **Government / Municipal** (Water boards, smart cities) — Enterprise contract + maintenance at ₹25L–₹1Cr/year
-
-### Scalability Roadmap
-| Phase | Timeline | Goal |
-|-------|----------|------|
-| Phase 1 | Now | Pilot with 1–2 water utilities |
-| Phase 2 | 6 months | SaaS MVP, 10+ utilities, ₹10L–₹20L ARR |
-| Phase 3 | 1 year | Government contracts, Smart City integrations, ₹1Cr+ ARR |
+Designed for real-world deployment across municipal and industrial smart utilities:
+- 🏘️ **Small Municipal Utilities:** SaaS cloud-managed telemetry monitoring.
+- 🏭 **Industrial Production Plants:** On-premise private deployment licensing.
+- 🏛️ **Smart Cities / Enterprise Contracts:** Multi-site grid integrations and 24/7 security service SLA contracts.
 
 ---
 
@@ -297,8 +269,6 @@ HydroVigil is designed for real-world deployment across three tiers:
 
 ---
 
-
 <p align="center">
   Made with 💧 by Team SHE CORE · SSN College of Engineering
 </p>
-

@@ -11,6 +11,10 @@ import {
   FaShieldAlt,
   FaSyncAlt,
   FaWater,
+  FaPhone,
+  FaEnvelope,
+  FaMapMarkerAlt,
+  FaInfoCircle,
 } from "react-icons/fa";
 import Header from "./components/Header";
 import KPICard from "./components/KPICard";
@@ -269,7 +273,101 @@ function tryPlayBeep() {
   }
 }
 
+function SystemGuide() {
+  return (
+    <motion.section
+      className="mx-auto max-w-[1200px] px-4 py-8 text-textPrimary relative z-20"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="glass-panel rounded-2xl p-6 shadow-elevate sm:p-10 mb-8 bg-card/60 backdrop-blur-md border border-white/10">
+        <h2 className="text-2xl font-bold flex items-center gap-3 text-accent mb-4">
+          <FaInfoCircle className="h-6 w-6" />
+          HydroVigil Cyber Defense Framework
+        </h2>
+        <p className="text-textSecondary leading-7 text-sm sm:text-base">
+          HydroVigil is a state-of-the-art explainable AI cybersecurity dashboard built to protect municipal smart water distribution grids. It monitors real-time telemetry (pressure, flow rate, and water levels) from Secure Water Treatment (SWaT) physical testbeds, detecting coordinated cyber-physical manipulation and applying instant mitigative countermeasures.
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <article className="glass-panel rounded-xl p-6 shadow-panel bg-card/40 border border-white/5">
+          <h3 className="text-lg font-semibold text-textPrimary mb-3 flex items-center gap-2">
+            <FaBrain className="text-accent h-5 w-5" />
+            Core Technology Stack
+          </h3>
+          <p className="text-textSecondary text-sm leading-6 mb-4">
+            Under the hood, HydroVigil executes dual-layered deep learning models:
+          </p>
+          <ul className="space-y-3 text-xs text-textSecondary font-mono">
+            <li className="bg-white/[0.02] border border-white/5 rounded-lg p-2.5">
+              <strong className="text-accent">Transformer Autoencoder:</strong> Learns high-dimensional spatial-temporal cross-sensor correlation mappings. Compares attention maps and computes reconstruction errors.
+            </li>
+            <li className="bg-white/[0.02] border border-white/5 rounded-lg p-2.5">
+              <strong className="text-warning">LSTM Autoencoder (Adaptive Fallback):</strong> Automatically engages if the Transformer attention or entropy z-score drifts out of limits (z_A &gt; 3.0 or z_E &gt; 2.0), indicating a high-uncertainty phase.
+            </li>
+          </ul>
+        </article>
+
+        <article className="glass-panel rounded-xl p-6 shadow-panel bg-card/40 border border-white/5">
+          <h3 className="text-lg font-semibold text-textPrimary mb-3 flex items-center gap-2">
+            <FaNetworkWired className="text-accent h-5 w-5" />
+            Digital SCADA Twin
+          </h3>
+          <p className="text-textSecondary text-sm leading-6 mb-4">
+            The Command Center visualizes the physical infrastructure in real time:
+          </p>
+          <ul className="space-y-2 text-xs text-textSecondary">
+            <li className="flex items-start gap-2">
+              <span className="text-accent mt-0.5">•</span>
+              <span><strong>Inlet Pump (P-11):</strong> Spins dynamically to indicate fluid regulation status.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-accent mt-0.5">•</span>
+              <span><strong>Pre-Treatment Tank (W-05):</strong> Renders water level shifts dynamically using sensor metrics.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-accent mt-0.5">•</span>
+              <span><strong>Actuator Warnings:</strong> Blinks red and draws anomaly boundary rings around sensors under threat.</span>
+            </li>
+          </ul>
+        </article>
+      </div>
+
+      <div className="glass-panel rounded-2xl p-6 shadow-panel bg-card/40 border border-white/10">
+        <h3 className="text-lg font-semibold text-textPrimary mb-4">How to Operate the Simulation</h3>
+        <ol className="grid gap-4 md:grid-cols-4 text-xs leading-5 text-textSecondary text-center">
+          <li className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+            <div className="rounded-full bg-accent/10 text-accent font-bold w-7 h-7 mx-auto flex items-center justify-center mb-3">1</div>
+            <strong>Select Role</strong>
+            <p className="mt-1">Pick Operator (monitoring) or SOC Admin (incident downloads) on the Home page.</p>
+          </li>
+          <li className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+            <div className="rounded-full bg-accent/10 text-accent font-bold w-7 h-7 mx-auto flex items-center justify-center mb-3">2</div>
+            <strong>Trigger Attack</strong>
+            <p className="mt-1">Click "Simulate Coordinated Attack" on the console to initiate threat scenarios.</p>
+          </li>
+          <li className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+            <div className="rounded-full bg-accent/10 text-accent font-bold w-7 h-7 mx-auto flex items-center justify-center mb-3">3</div>
+            <strong>Review Briefing</strong>
+            <p className="mt-1">Inspect live z-scores, fallback indicators, and local mitigation memories.</p>
+          </li>
+          <li className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+            <div className="rounded-full bg-accent/10 text-accent font-bold w-7 h-7 mx-auto flex items-center justify-center mb-3">4</div>
+            <strong>Export Audit</strong>
+            <p className="mt-1">Download official incident logs in text format for post-incident analysis.</p>
+          </li>
+        </ol>
+      </div>
+    </motion.section>
+  );
+}
+
 function LandingScreen({ onEnter }) {
+  const [showRoles, setShowRoles] = useState(false);
+
   return (
     <motion.section
       className="landing-screen relative z-30 flex min-h-screen items-center px-4 py-10 sm:px-6 lg:px-8"
@@ -300,16 +398,42 @@ function LandingScreen({ onEnter }) {
             system stabilization.
           </p>
 
-          <motion.button
-            type="button"
-            onClick={onEnter}
-            className="ripple-btn mt-8 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-bg"
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Enter Command Center
-            <FaArrowRight className="h-3.5 w-3.5" />
-          </motion.button>
+          {!showRoles ? (
+            <motion.button
+              type="button"
+              onClick={() => setShowRoles(true)}
+              className="ripple-btn mt-8 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-bg"
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Enter Command Center
+              <FaArrowRight className="h-3.5 w-3.5" />
+            </motion.button>
+          ) : (
+            <motion.div
+              className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <button
+                type="button"
+                onClick={() => onEnter("operator")}
+                className="inline-flex flex-col items-center justify-center rounded-xl border border-accent/40 bg-accent/10 p-4 w-44 hover:bg-accent/20 transition-all duration-300"
+              >
+                <span className="font-bold text-textPrimary uppercase tracking-wider text-xs">Operator Role</span>
+                <span className="mt-1 text-[10px] text-textSecondary text-center">Monitoring & Simulation</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onEnter("admin")}
+                className="inline-flex flex-col items-center justify-center rounded-xl border border-critical/40 bg-critical/10 p-4 w-44 hover:bg-critical/20 transition-all duration-300"
+              >
+                <span className="font-bold text-textPrimary uppercase tracking-wider text-xs">SOC Admin Role</span>
+                <span className="mt-1 text-[10px] text-textSecondary text-center">Incident Audit & Reports</span>
+              </button>
+            </motion.div>
+          )}
         </motion.div>
 
         <div className="mt-6 grid w-full gap-4 md:grid-cols-3">
@@ -339,7 +463,8 @@ function LandingScreen({ onEnter }) {
 }
 
 export default function App() {
-  const [showLanding, setShowLanding] = useState(true);
+  const [activeTab, setActiveTab] = useState("home"); // "home" | "dashboard" | "guide"
+  const [userRole, setUserRole] = useState(null); // 'operator' | 'admin'
   const [activeView, setActiveView] = useState("operations");
   const [timestamp, setTimestamp] = useState(() => new Date());
   const [systemStatus, setSystemStatus] = useState("normal");
@@ -357,6 +482,13 @@ export default function App() {
   const [mlDecision, setMlDecision] = useState(null);     // "NORMAL" | "SUSPICIOUS" | "ATTACK"
   const [mlRiskScore, setMlRiskScore] = useState(null);   // number (0–100)
   const [mlConfidence, setMlConfidence] = useState(null); // "LOW" | "MEDIUM" | "HIGH"
+  
+  // Explainability states
+  const [mlZScores, setMlZScores] = useState(null);
+  const [mlReason, setMlReason] = useState(null);
+  const [mlAffectedSensor, setMlAffectedSensor] = useState(null);
+  const [mlFallback, setMlFallback] = useState(false);
+
   const toastTimerRef = useRef(null);
   const memoryRef = useRef(countermeasureMemory);
   const lastLoggedDecisionRef = useRef(null);
@@ -542,6 +674,37 @@ export default function App() {
     });
   }, [addIncident, clearSimulationTimers, showToast, targetNodeId]);
 
+  const handleDownloadIncidentReport = () => {
+    if (incidents.length === 0) return;
+    
+    let reportText = `==================================================\n`;
+    reportText += `          HYDROVIGIL CYBER INCIDENT REPORT        \n`;
+    reportText += `==================================================\n`;
+    reportText += `Report Generated: ${new Date().toLocaleString()}\n`;
+    reportText += `Operator Clearance Role: ${userRole ? userRole.toUpperCase() : "UNKNOWN"}\n`;
+    reportText += `Total Logged Incidents: ${incidents.length}\n\n`;
+    
+    incidents.forEach((inc, idx) => {
+      reportText += `[Incident #${idx + 1}]\n`;
+      reportText += `Timestamp:      ${inc.timestamp}\n`;
+      reportText += `Sensor ID:      ${inc.sensorId ?? "N/A"}\n`;
+      reportText += `Prediction:     ${inc.predictionType ?? "Threat"}\n`;
+      reportText += `Severity:       ${inc.severity ? inc.severity.toUpperCase() : "LOW"}\n`;
+      reportText += `Event Detail:   ${inc.event}\n`;
+      reportText += `Countermeasure: ${inc.countermeasure ?? "N/A"}\n`;
+      reportText += `Status:         ${inc.status}\n`;
+      reportText += `--------------------------------------------------\n`;
+    });
+    
+    const blob = new Blob([reportText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `hydrovigil_incident_report_${Date.now()}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     memoryRef.current = countermeasureMemory;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(countermeasureMemory));
@@ -554,97 +717,109 @@ export default function App() {
 
 
   useEffect(() => {
-    if (!mlDecision) return;
+    let ws;
+    let reconnectTimeout;
+    let isDisposed = false;
 
-    if (mlDecision === "ATTACK") {
-      setSystemStatus("active_attack");
-    } else if (mlDecision === "SUSPICIOUS") {
-      setSystemStatus("suspicious");
-    } else {
-      setSystemStatus("normal");
-    }
-  }, [mlDecision]);
+    const connectWs = () => {
+      if (isDisposed) return;
+      
+      const wsHost = window.location.hostname || "localhost";
+      const wsPort = "8000";
+      console.log(`🔌 Connecting to HydroVigil WebSocket at ws://${wsHost}:${wsPort}/ws/telemetry...`);
+      ws = new WebSocket(`ws://${wsHost}:${wsPort}/ws/telemetry`);
 
-  useEffect(() => {
-    let cancelled = false;
-    let inFlight = false;
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.error) {
+            console.error("ML WebSocket error payload:", data.error);
+            return;
+          }
 
-    const pullPrediction = async () => {
-      if (inFlight) return;
-      inFlight = true;
-      try {
-        const data = await runMlPrediction();
-        if (cancelled) return;
+          setMlDecision(data.final_decision);
+          setMlRiskScore(data.risk_score);
+          setMlConfidence(data.confidence_score ?? null);
+          setMlZScores(data.z_scores ?? null);
+          setMlReason(data.detection_reason ?? null);
+          setMlAffectedSensor(data.affected_sensor ?? null);
+          setMlFallback(data.fallback_activated ?? false);
 
-        setMlDecision(data.final_decision);
-        setMlRiskScore(data.risk_score);
-        setMlConfidence(data.confidence_score ?? null);
+          if (data.telemetry_point) {
+            const nextPoint = {
+              time: formatClock(new Date()),
+              pressure: Number(data.telemetry_point.pressure ?? 0),
+              flow: Number(data.telemetry_point.flow ?? 0),
+              level: Number(data.telemetry_point.level ?? 0),
+              anomalyLevel: clamp(Number(data.telemetry_point.anomalyLevel ?? 0), 0, 1),
+            };
+            setTelemetry((prev) => [...prev, nextPoint].slice(-MAX_POINTS));
+          }
 
-        if (data.telemetry_point) {
-          const nextPoint = {
-            time: formatClock(new Date()),
-            pressure: Number(data.telemetry_point.pressure ?? 0),
-            flow: Number(data.telemetry_point.flow ?? 0),
-            level: Number(data.telemetry_point.level ?? 0),
-            anomalyLevel: clamp(Number(data.telemetry_point.anomalyLevel ?? 0), 0, 1),
-          };
-          setTelemetry((prev) => [...prev, nextPoint].slice(-MAX_POINTS));
-        }
+          const decision = data.final_decision ?? null;
+          const risk = Number(data.risk_score ?? 0);
+          const now = Date.now();
+          const previousDecision = lastLoggedDecisionRef.current;
 
-        const decision = data.final_decision ?? null;
-        const risk = Number(data.risk_score ?? 0);
-        const now = Date.now();
-        const previousDecision = lastLoggedDecisionRef.current;
-
-        if (decision && previousDecision === null) {
-          lastLoggedDecisionRef.current = decision;
-          lastLoggedAtRef.current = now;
-        } else if (decision) {
-          const changed = decision !== previousDecision;
-          const repeatAlert =
-            decision !== "NORMAL" && now - lastLoggedAtRef.current >= INCIDENT_COOLDOWN_MS;
-          const recovered = decision === "NORMAL" && previousDecision && previousDecision !== "NORMAL";
-          const shouldLog = decision === "NORMAL" ? recovered : changed || repeatAlert;
-
-          if (shouldLog) {
-            const backendEvent = data.event ?? null;
-            if (backendEvent?.event_id) {
-              upsertBackendIncident(backendEvent.event_id, {
-                sensorId: backendEvent.sensor_id ?? targetNodeId,
-                event: backendEvent.event,
-                predictionType: backendEvent.prediction_type ?? "Threat",
-                severity: backendEvent.severity ?? "low",
-                countermeasure: backendEvent.countermeasure ?? "No corrective action required.",
-                memoryAction: backendEvent.memory_action ?? "N/A",
-                status: backendEvent.status ?? "Investigating",
-                mitigationSeconds: decision === "NORMAL" ? 18 : 42,
-              });
-            }
-
-            if (changed && decision === "ATTACK") {
-              showToast({
-                type: "critical",
-                message: `Backend model detected ATTACK on node ${targetNodeId} (${risk}%).`,
-              });
-            }
-
+          if (decision && previousDecision === null) {
             lastLoggedDecisionRef.current = decision;
             lastLoggedAtRef.current = now;
+          } else if (decision) {
+            const changed = decision !== previousDecision;
+            const repeatAlert =
+              decision !== "NORMAL" && now - lastLoggedAtRef.current >= INCIDENT_COOLDOWN_MS;
+            const recovered = decision === "NORMAL" && previousDecision && previousDecision !== "NORMAL";
+            const shouldLog = decision === "NORMAL" ? recovered : changed || repeatAlert;
+
+            if (shouldLog) {
+              const backendEvent = data.event ?? null;
+              if (backendEvent?.event_id) {
+                upsertBackendIncident(backendEvent.event_id, {
+                  sensorId: backendEvent.sensor_id ?? targetNodeId,
+                  event: backendEvent.event,
+                  predictionType: backendEvent.prediction_type ?? "Threat",
+                  severity: backendEvent.severity ?? "low",
+                  countermeasure: backendEvent.countermeasure ?? "No corrective action required.",
+                  memoryAction: backendEvent.memory_action ?? "N/A",
+                  status: backendEvent.status ?? "Investigating",
+                  mitigationSeconds: decision === "NORMAL" ? 18 : 42,
+                });
+              }
+
+              if (changed && decision === "ATTACK") {
+                showToast({
+                  type: "critical",
+                  message: `Backend model detected ATTACK on node ${targetNodeId} (${risk}%).`,
+                });
+              }
+
+              lastLoggedDecisionRef.current = decision;
+              lastLoggedAtRef.current = now;
+            }
           }
+        } catch (err) {
+          console.error("Error reading WebSocket telemetry:", err);
         }
-      } catch (err) {
-        if (!cancelled) console.error("ML inference failed:", err);
-      } finally {
-        inFlight = false;
-      }
+      };
+
+      ws.onerror = (err) => {
+        console.error("WebSocket connection error:", err);
+      };
+
+      ws.onclose = () => {
+        console.log("🔌 WebSocket closed. Reconnecting in 3s...");
+        if (!isDisposed) {
+          reconnectTimeout = setTimeout(connectWs, 3000);
+        }
+      };
     };
 
-    pullPrediction();
-    const poller = setInterval(pullPrediction, POLL_MS);
+    connectWs();
 
     return () => {
-      cancelled = true;
-      clearInterval(poller);
+      isDisposed = true;
+      if (ws) ws.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
     };
   }, [showToast, targetNodeId, upsertBackendIncident]);
 
@@ -799,7 +974,7 @@ export default function App() {
       <div className="floating-glow floating-glow-b" />
 
       <AnimatePresence>
-        {!showLanding && ambientAttackGlow ? (
+        {activeTab === "dashboard" && ambientAttackGlow ? (
           <motion.div
             className="attack-ambient"
             initial={{ opacity: 0 }}
@@ -811,7 +986,7 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {!showLanding && overlayFlash ? (
+        {activeTab === "dashboard" && overlayFlash ? (
           <motion.div
             className="pointer-events-none fixed inset-0 z-40 bg-critical/20"
             initial={{ opacity: 0 }}
@@ -822,10 +997,27 @@ export default function App() {
         ) : null}
       </AnimatePresence>
 
+      <Header
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        systemStatus={systemStatus}
+        timestamp={timestamp}
+        userRole={userRole}
+        onAssignRole={(role) => setUserRole(role)}
+      />
+
       <AnimatePresence mode="wait">
-        {showLanding ? (
-          <LandingScreen key="landing" onEnter={() => setShowLanding(false)} />
-        ) : (
+        {activeTab === "home" && (
+          <LandingScreen
+            key="landing"
+            onEnter={(role) => {
+              setUserRole(role);
+              setActiveTab("dashboard");
+            }}
+          />
+        )}
+
+        {activeTab === "dashboard" && (
           <motion.div
             key="dashboard"
             className="relative z-20"
@@ -834,132 +1026,174 @@ export default function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.36 }}
           >
-            <Header systemStatus={systemStatus} timestamp={timestamp} />
+            {!userRole ? (
+              <div className="mx-auto max-w-md p-8 text-center text-textPrimary mt-16 glass-panel rounded-2xl bg-card/60 backdrop-blur-md border border-white/10 relative z-20">
+                <FaLock className="mx-auto h-10 w-10 text-accent mb-4" />
+                <h3 className="text-lg font-bold">Clearance Level Required</h3>
+                <p className="text-xs text-textSecondary mt-2 mb-6">
+                  Please select your command clearance to unlock the real-time SCADA telemetry grids.
+                </p>
+                <div className="flex gap-4 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setUserRole("operator")}
+                    className="ripple-btn border border-accent/40 bg-accent/10 px-4 py-2 text-xs font-semibold rounded-lg text-textPrimary hover:bg-accent/20 transition-all duration-300"
+                  >
+                    Operator
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUserRole("admin")}
+                    className="ripple-btn border border-critical/40 bg-critical/10 px-4 py-2 text-xs font-semibold rounded-lg text-textPrimary hover:bg-critical/20 transition-all duration-300"
+                  >
+                    SOC Admin
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
+                <motion.section
+                  className="glass-panel rounded-xl p-4 shadow-panel sm:p-5"
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.16em] text-textSecondary">Control Console</p>
+                      <h2 className="mt-1 text-lg font-semibold text-textPrimary">Cyber Attack Simulation Mode</h2>
+                      <p className="mt-1 text-sm text-textSecondary">
+                        Progressive anomaly lifecycle with AI reasoning, incident memory, and fault-tolerant response.
+                      </p>
+                    </div>
 
-            <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
-              <motion.section
-                className="glass-panel rounded-xl p-4 shadow-panel sm:p-5"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.16em] text-textSecondary">Control Console</p>
-                    <h2 className="mt-1 text-lg font-semibold text-textPrimary">Cyber Attack Simulation Mode</h2>
-                    <p className="mt-1 text-sm text-textSecondary">
-                      Progressive anomaly lifecycle with AI reasoning, incident memory, and fault-tolerant response.
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSimulateAttack}
+                        className="ripple-btn inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-bg"
+                      >
+                        <FaChartLine className="h-3.5 w-3.5" />
+                        Simulate Coordinated Attack
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetSystem}
+                        className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-card/85 px-4 py-2 text-sm font-semibold text-textPrimary transition-all duration-300 hover:-translate-y-0.5 hover:bg-card"
+                      >
+                        <FaSyncAlt className="h-3.5 w-3.5" />
+                        Reset System
+                      </button>
+                      {userRole === "admin" && (
+                        <button
+                          type="button"
+                          onClick={handleDownloadIncidentReport}
+                          className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/15 px-4 py-2 text-sm font-semibold text-accent transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/25"
+                        >
+                          <FaDatabase className="h-3.5 w-3.5" />
+                          Download SOC Audit Report
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveView("operations")}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition-all duration-300 ${
+                          activeView === "operations"
+                            ? "border-accent bg-accent/15 text-accent"
+                            : "border-white/10 bg-white/[0.02] text-textSecondary hover:bg-white/[0.05]"
+                        }`}
+                      >
+                        Real-Time Operations
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveView("memory")}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition-all duration-300 ${
+                          activeView === "memory"
+                            ? "border-accent bg-accent/15 text-accent"
+                            : "border-white/10 bg-white/[0.02] text-textSecondary hover:bg-white/[0.05]"
+                        }`}
+                      >
+                        Mitigation Memory ({Object.keys(countermeasureMemory).length})
+                      </button>
+                    </div>
+
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-textSecondary">
+                      Decision: <span className="font-semibold text-textPrimary">{mlDecision ?? "N/A"}</span>
+                      {" | "}
+                      Risk: <span className="font-semibold text-textPrimary">{mlRiskScore ?? 0}%</span>
+                      {" | "}
+                      Confidence: <span className="font-semibold text-textPrimary">{mlConfidence ?? "N/A"}</span>
                     </p>
                   </div>
+                </motion.section>
 
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSimulateAttack}
-                      className="ripple-btn inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-bg"
+                <AnimatePresence mode="wait">
+                  {activeView === "operations" ? (
+                    <motion.div
+                      key="operations"
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-5"
                     >
-                      <FaChartLine className="h-3.5 w-3.5" />
-                      Simulate Coordinated Attack
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleResetSystem}
-                      className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-card/85 px-4 py-2 text-sm font-semibold text-textPrimary transition-all duration-300 hover:-translate-y-0.5 hover:bg-card"
+                      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                        {kpiCards.map((kpi) => (
+                          <KPICard key={kpi.title} {...kpi} />
+                        ))}
+                      </section>
+
+                      <section className="grid gap-4 xl:grid-cols-3">
+                        <div className="xl:col-span-2">
+                          <LiveCharts data={telemetry} simulationPhase={simulationPhase} />
+                        </div>
+                        <div className="space-y-4">
+                          <AIExplanation
+                            {...aiBriefing}
+                            zScores={mlZScores}
+                            affectedSensor={mlAffectedSensor}
+                            detectionReason={mlReason}
+                            fallbackActivated={mlFallback}
+                          />
+                          <NetworkMap
+                            simulationPhase={simulationPhase}
+                            targetNodeId={targetNodeId}
+                            telemetry={latestTelemetry}
+                            affectedSensor={mlAffectedSensor}
+                          />
+                        </div>
+                      </section>
+
+                      <IncidentLog incidents={incidents} />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="validation"
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-5"
                     >
-                      <FaSyncAlt className="h-3.5 w-3.5" />
-                      Reset System
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setActiveView("operations")}
-                      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition-all duration-300 ${
-                        activeView === "operations"
-                          ? "border-accent/45 bg-accent/15 text-accent"
-                          : "border-white/15 bg-card/60 text-textSecondary hover:text-textPrimary"
-                      }`}
-                    >
-                      Operations View
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveView("validation")}
-                      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition-all duration-300 ${
-                        activeView === "validation"
-                          ? "border-accent/45 bg-accent/15 text-accent"
-                          : "border-white/15 bg-card/60 text-textSecondary hover:text-textPrimary"
-                      }`}
-                    >
-                      Model & Fault Metrics
-                    </button>
-                  </div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-textSecondary">
-                    Active target node: <span className="font-semibold text-textPrimary">{targetNodeId}</span>
-                    {simulationRunning ? " | simulation in progress" : " | monitoring idle"}
-                  </p>
-                </div>
-                <p className="mt-3 text-xs uppercase tracking-[0.12em] text-textSecondary">
-                  Decision: <span className="font-semibold text-textPrimary">{mlDecision ?? "N/A"}</span>
-                  {" | "}
-                  Risk: <span className="font-semibold text-textPrimary">{mlRiskScore ?? 0}%</span>
-                  {" | "}
-                  Confidence: <span className="font-semibold text-textPrimary">{mlConfidence ?? "N/A"}</span>
-                </p>
-              </motion.section>
-
-              <AnimatePresence mode="wait">
-                {activeView === "operations" ? (
-                  <motion.div
-                    key="operations"
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-5"
-                  >
-                    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                      {kpiCards.map((card, index) => (
-                        <KPICard key={card.title} index={index} {...card} />
-                      ))}
-                    </section>
-
-                    <section className="grid gap-4 xl:grid-cols-3">
-                      <div className="xl:col-span-2">
-                        <LiveCharts data={telemetry} simulationPhase={simulationPhase} />
-                      </div>
-                      <div className="space-y-4">
-                        <AIExplanation {...aiBriefing} />
-                        <NetworkMap simulationPhase={simulationPhase} targetNodeId={targetNodeId} />
-                      </div>
-                    </section>
-
-                    <IncidentLog incidents={incidents} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="validation"
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-5"
-                  >
-                    <section className="grid gap-4 xl:grid-cols-2">
-                      <ModelPerformancePanel reports={MODEL_REPORTS} />
-                      <FaultTolerancePanel metrics={faultMetrics} learnedCountermeasures={learnedCountermeasures} />
-                    </section>
-                    <IncidentLog
-                      incidents={validationLog.length > 0 ? validationLog : incidents.slice(0, 8)}
-                      showFlags={false}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </main>
+                      <section className="grid gap-4 xl:grid-cols-2">
+                        <ModelPerformancePanel reports={MODEL_REPORTS} />
+                        <FaultTolerancePanel metrics={faultMetrics} learnedCountermeasures={learnedCountermeasures} />
+                      </section>
+                      <IncidentLog
+                        incidents={validationLog.length > 0 ? validationLog : incidents.slice(0, 8)}
+                        showFlags={false}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </main>
+            )}
 
             <AnimatePresence>
               {toast ? (
@@ -979,9 +1213,9 @@ export default function App() {
             </AnimatePresence>
           </motion.div>
         )}
+
+        {activeTab === "guide" && <SystemGuide key="guide" />}
       </AnimatePresence>
     </div>
   );
 }
-
-
