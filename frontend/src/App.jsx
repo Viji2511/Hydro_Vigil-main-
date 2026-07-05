@@ -724,10 +724,16 @@ export default function App() {
     const connectWs = () => {
       if (isDisposed) return;
       
-      const wsHost = window.location.hostname || "localhost";
-      const wsPort = "8000";
-      console.log(`🔌 Connecting to HydroVigil WebSocket at ws://${wsHost}:${wsPort}/ws/telemetry...`);
-      ws = new WebSocket(`ws://${wsHost}:${wsPort}/ws/telemetry`);
+      const envWsUrl = import.meta.env.VITE_WS_URL;
+      if (envWsUrl) {
+        console.log(`🔌 Connecting to production HydroVigil WebSocket at ${envWsUrl}...`);
+        ws = new WebSocket(envWsUrl);
+      } else {
+        const wsHost = window.location.hostname || "localhost";
+        const wsPort = "8000";
+        console.log(`🔌 Connecting to local HydroVigil WebSocket at ws://${wsHost}:${wsPort}/ws/telemetry...`);
+        ws = new WebSocket(`ws://${wsHost}:${wsPort}/ws/telemetry`);
+      }
 
       ws.onmessage = (event) => {
         try {
