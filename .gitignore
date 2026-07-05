@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# Python virtual environment and caching
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Local database and env files
+.env
+local.db
+database/faults.db
