@@ -228,7 +228,31 @@ npm run dev
    - Anomaly lines plotted in real time.
    - The SCADA digital twin blinking red around the targeted node.
    - The AI Briefing displaying Reconstruction, Temporal, and Entropy Z-Scores along with the identified sensor ID.
-4. **Audit Logging (Admin Only):** If logged in as a SOC Admin, click **"Download SOC Audit Report"** to export a structured text file containing all logged threat mitigation logs.
+4. **Audit Logging (Admin Only):** Click **"Download SOC Audit Report"** to export a structured text file containing all logged threat mitigation logs.
+
+---
+
+## 🌐 Production Deployment
+
+For production deployments, the system is designed to host the backend and frontend separately to support persistent socket communication:
+
+### 1. Backend Deployment (Render)
+The FastAPI backend runs on **Render** as a Python Web Service:
+- **Root Directory:** `backend`
+- **Build Command:** `pip install -r requirements.txt`
+- **Start Command:** `uvicorn app:app --host 0.0.0.0 --port $PORT`
+- **CORS Settings:** Automatically configured to accept client WebSocket connections from Vercel hosting origins.
+
+### 2. Frontend Deployment (Vercel)
+The React dashboard runs on **Vercel** as a Vite Web Application:
+- **Root Directory:** `frontend`
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **Install Command:** `npm install`
+- **Environment Variables:**
+  - **Key:** `VITE_WS_URL`
+  - **Value:** `wss://<your-render-service-name>.onrender.com/ws/telemetry` *(ensure secure `wss://` protocol is used)*
+- **Crucial Build Hint:** Remember to trigger a **Redeploy** in the Vercel dashboard after adding or updating variables, so Vite can inject the values during the build phase.
 
 ---
 
